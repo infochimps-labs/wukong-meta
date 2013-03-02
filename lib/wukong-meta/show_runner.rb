@@ -60,15 +60,12 @@ module Wukong
       end
 
       def green text
-        "\e[32m\e[1m#{text}\e[0m"
+        $stdout.tty? ? "\e[32m\e[1m#{text}\e[0m" : text
       end
 
       def blue text
-        "\e[34m\e[1m#{text}\e[0m"
+        $stdout.tty? ? "\e[34m\e[1m#{text}\e[0m" : text
       end
-
-      
-      
       
     end
   end
