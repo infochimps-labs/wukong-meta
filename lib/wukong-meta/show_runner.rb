@@ -1,16 +1,18 @@
 require_relative 'show_runner/processors'
 require_relative 'show_runner/dataflows'
+require_relative 'show_runner/jobs'
 
 module Wukong
   module Meta
 
     # Runs the wu-show command.
-    class ShowRunner < Wukong::Local::LocalRunner
+    class ShowRunner < Wukong::Runner
 
       include ShowProcessors
       include ShowDataflows
+      include ShowJobs
 
-      usage "[PROCESSOR|DATAFLOW]"
+      usage "[PROCESSOR|DATAFLOW|JOB|processors|dataflows|jobs]"
 
       description <<-EOF.gsub(/^ {8}/,'')
 
@@ -31,40 +33,71 @@ module Wukong
       
       include Logging
 
-      def validate
-        true
+      def arg
+        args.first
       end
 
       # Shows the requested processor or dataflow or shows all
       # processors and dataflows if none was requested.
       def run
         case
-        when processor && processor?(processor)
-          show_processor(Wukong.registry.retrieve(processor.to_sym))
-        when processor && dataflow?(processor)
-          show_dataflow(Wukong.registry.retrieve(processor.to_sym))
+        when arg == 'processors' then list_processors
+        when arg == 'dataflows'  then list_dataflows
+        when arg == 'jobs'       then list_jobs
+        when processor?(arg)
+          show_processor(Wukong.registry.retrieve(arg.to_sym))
+        when dataflow?(arg)
+          show_dataflow(Wukong.registry.retrieve(arg.to_sym))
+        when job?(arg)
+          show_job(jobs[arg.to_sym])
         else
-          if settings[:to] == 'text'
-            list_max_sizes[:label] = (processors + dataflows).map { |proc| proc.label.size          }.max
-            list_max_sizes[:class] = (processors + dataflows).map { |proc| proc.for_class.to_s.size }.max
-          end
           list_dataflows
           list_processors
+          list_jobs
         end
       end
 
+      def max_label_size
+        @max_label_size ||= (processors + dataflows + jobs.values).map { |thing| thing.label.size }.max
+      end
+
+      def max_path_size
+        @max_path_size ||= (jobs.values).map { |thing| thing.relative_path.to_s.size }.max
+      end
+      
       protected
 
-      def list_max_sizes
-        @list_max_sizes ||= {label: 10, class: 10}
+      def heading text, level=1
+        case level
+        when 1 then color text, :green
+        when 2 then color text, :black,
+        else        color text, :black, false
+        end
       end
-
-      def green text
-        $stdout.tty? ? "\e[32m\e[1m#{text}\e[0m" : text
+      
+      def color_proc text
+        color text, :magenta
       end
-
-      def blue text
-        $stdout.tty? ? "\e[34m\e[1m#{text}\e[0m" : text
+      
+      def color_flow text
+        color text, :blue
+      end
+      
+      def color_job text
+        color text, :red
+      end
+      
+      # http://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+      COLORS = {}.tap do |colors|
+        %w[black red green yellow
+           blue magenta cyan white].each_with_index do |color, index|
+          colors[color.to_sym] = 30 + index
+        end
+      end
+      
+      def color text, name, bold=true
+        return text unless $stdout.tty?
+        %Q{\e[#{COLORS[name]}m#{bold ? "\e[1m" : ""}#{text}\e[0m}
       end
       
     end

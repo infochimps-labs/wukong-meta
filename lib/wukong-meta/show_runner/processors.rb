@@ -13,69 +13,67 @@ module Wukong
       
       def show_processor processor
         puts case settings[:to]
-             when 'json'  then show_processor_as_json(processor)
-             when 'tsv'   then show_processor_as_tsv(processor)
-             when 'text'  then show_processor_as_text(processor)
-             when 'list'  then show_processor_as_list(processor)
+             when 'json'  then MultiJson.dump(processor_as_json(processor))
+             when 'tsv'   then processor_as_tsv(processor).join("\t")
+             when 'text'  then processor_as_text(processor)
+             when 'list'  then processor_as_list(processor).join("\t")
              end
       end
 
-      def show_processor_as_json processor
-        MultiJson.dump({
-                         __id: processor.label,
-                         name: processor.label,
-                         class: processor.for_class.to_s,
-                         description: processor.for_class.description.to_s,
-                         fields: processor_fields(processor),
-                       })
+      def processor_as_json processor
+        {
+          _id: processor.label,
+          name: processor.label,
+          class: processor.for_class.to_s,
+          description: processor.for_class.description.to_s,
+          fields: processor_fields(processor),
+        }
       end
 
-      def show_processor_as_tsv processor
+      def processor_as_tsv processor
         [
          'Processor',
          processor.label,
-         processor.for_class
-        ].map(&:to_s).join("\t")
+        ].map(&:to_s)
       end
       
-      def show_processor_as_list processor
+      def processor_as_list processor
         [
          'Processor',
-         processor.label.to_s.ljust(list_max_sizes[:label]),
-         processor.for_class.to_s.ljust(list_max_sizes[:class])
-        ].join("\t")
+         color_proc(processor.label.to_s.ljust(max_label_size))
+        ]
       end
       
-      def show_processor_as_text processor
+      def processor_as_text processor, level=1
         [
-         "#{green('PROCESSOR:')} #{processor.label}",
-         "#{green('CLASS:')}     #{processor.for_class}",
+         "#{heading('PROCESSOR:', level)} #{color_proc(processor.label)}",
+         "#{heading('CLASS:', level)}     #{color_proc(processor.for_class)}",
         ].tap do |lines|
 
           lines << ''
           if processor_fields(processor).empty?
-            lines << "#{green('Fields:')} None"
+            lines << "#{heading('Fields:', level)} None"
           else
-            lines << green("FIELDS:")
+            lines << heading("FIELDS:", level)
             processor_fields(processor).each_with_index do |field, index|
-              lines << "  #{blue('NAME:')}        #{field[:name]}"
-              lines << "  #{blue('TYPE:')}        #{field[:type]}"
-              lines << "  #{blue('DEFAULT:')}     #{field[:default] || 'nil'}"
-              lines << "  #{blue('DESCRIPTION:')} #{field[:doc]}" if field[:doc]
+              lines << "  #{heading('NAME:', level+1)}        #{field[:name]}"
+              lines << "  #{heading('TYPE:', level+1)}        #{field[:type]}"
+              lines << "  #{heading('DEFAULT:', level+1)}     #{field[:default] || 'nil'}"
+              lines << "  #{heading('DESCRIPTION:', level+1)} #{field[:doc]}" if field[:doc]
               lines << '' unless index == processor_fields(processor).size
             end
           end
 
           lines << ''
           if processor.for_class.description.nil?
-            lines << "#{green('DESCRIPTION:')} None"
+            lines << "#{heading('DESCRIPTION:', level)} None"
           else
             
-            lines << green("DESCRIPTION:")
+            lines << heading("DESCRIPTION:", level)
             lines << processor.for_class.description.split("\n").map { |line| '  ' + line }.join("\n")
           end
 
-        end.compact.map(&:to_s).join("\n")
+        end.compact.map(&:to_s)
       end
 
       def processor_fields processor
