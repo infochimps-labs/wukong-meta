@@ -1,6 +1,7 @@
 require_relative 'show_runner/processors'
 require_relative 'show_runner/dataflows'
 require_relative 'show_runner/jobs'
+require_relative 'show_runner/models'
 
 module Wukong
   module Meta
@@ -11,8 +12,9 @@ module Wukong
       include ShowProcessors
       include ShowDataflows
       include ShowJobs
+      include ShowModels
 
-      usage "[PROCESSOR|DATAFLOW|JOB|processors|dataflows|jobs]"
+      usage "[PROCESSOR|DATAFLOW|JOB|MODEL|processors|dataflows|jobs|models]"
 
       description <<-EOF.gsub(/^ {8}/,'')
 
@@ -44,15 +46,19 @@ module Wukong
         when arg == 'processors' then list_processors
         when arg == 'dataflows'  then list_dataflows
         when arg == 'jobs'       then list_jobs
+        when arg == 'models'     then list_models
         when processor?(arg)
           show_processor(Wukong.registry.retrieve(arg.to_sym))
         when dataflow?(arg)
           show_dataflow(Wukong.registry.retrieve(arg.to_sym))
         when job?(arg)
           show_job(jobs[arg.to_sym])
+        when model?(arg)
+          show_model(models[arg.to_sym])
         else
-          list_dataflows
+          list_models
           list_processors
+          list_dataflows
           list_jobs
         end
       end
@@ -85,6 +91,10 @@ module Wukong
       
       def color_job text
         color text, :red
+      end
+
+      def color_model text
+        color text, :yellow, false
       end
       
       # http://en.wikipedia.org/wiki/ANSI_escape_code#Colors
