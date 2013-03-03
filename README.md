@@ -40,7 +40,18 @@ Or the name of a specific model, processors, dataflow, or job (as
 reported in the second column of the above output):
 
 ```
-$ bundle exec wu-show regexp
+$ bundle exec wu-show MyModelName
+$ bundle exec wu-show my_processor
+$ bundle exec wu-show my_dataflow
+$ bundle exec wu-show my_job
+```
+
+The `wu-show` command colorizes output based on the type of the
+object.  You can see a legend of what colors correspond to what kinds
+of objects:
+
+```
+$ bundle exec wu-show legend
 ```
 
 === Output Formats
@@ -54,6 +65,10 @@ Try JSON output
 $ bundle exec wu-show processors --to=json
 ```
 
-Or TSV (which is 
+Or TSV
+
+```
+$ bundle exec wu-show processors --to=tsv
+```
 
 The default behavior is equivalent to `--to=text`.

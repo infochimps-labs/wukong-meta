@@ -9,7 +9,7 @@ module Wukong
     # Runs the wu-show command.
     class ShowRunner < Wukong::Runner
       
-      usage "[PROCESSOR|DATAFLOW|JOB|MODEL|processors|dataflows|jobs|models]"
+      usage "[legend|processors|dataflows|jobs|models|PROCESSOR|DATAFLOW|JOB|MODEL]"
 
       description <<-EOF.gsub(/^ {8}/,'')
 
@@ -21,6 +21,10 @@ module Wukong
         But you can also restrict it to a particular object
 
           $ wu-show my_processor
+
+        Or kind of object
+
+          $ wu-show processors
 
         It's often convenient to use the --to option so the listed
         contents can be processed downstream.
