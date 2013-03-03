@@ -51,6 +51,7 @@ module Wukong
         {
           _id:  model.to_s,
           name: model.to_s,
+          fields: model_fields(model),
         }
       end
       
