@@ -16,7 +16,7 @@ module Wukong
       end
 
       def column_names
-        [:type, :name, :stages]
+        [:name, :stages]
       end
 
       def as_hash dataflow
@@ -30,7 +30,7 @@ module Wukong
         }
       end
       
-      def as_tsv dataflow
+      def as_row dataflow
         hsh = as_hash(dataflow)
         [
          hsh[:type],

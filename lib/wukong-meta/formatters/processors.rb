@@ -16,7 +16,7 @@ module Wukong
       end
 
       def column_names
-        [:type, :name, :fields]
+        [:name, :fields]
       end
       
       def as_hash processor
@@ -30,7 +30,7 @@ module Wukong
         }
       end
 
-      def as_tsv processor
+      def as_row processor
         hsh = as_hash(processor)
         [
          hsh[:type],

@@ -14,7 +14,9 @@ module Wukong
       
       def table
         @table ||= objects.map do |object|
-          Hash[column_names.zip(as_tsv(object))]
+          row = as_row(object)
+          row.shift             # ignore type
+          Hash[column_names.zip(row)]
         end
       end
 
@@ -34,7 +36,7 @@ module Wukong
         obj = retrieve(label)
         case settings[:to]
         when 'json'  then puts MultiJson.dump(as_hash(obj))
-        when 'tsv'   then puts as_tsv(obj).join("\t")
+        when 'tsv'   then puts as_row(obj).join("\t")
         when 'text'  then display_text(obj)
         end
       end

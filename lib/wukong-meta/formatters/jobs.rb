@@ -30,7 +30,7 @@ module Wukong
       end
       
       def column_names
-        [:type, :name, :path, :mapper, :reducer]
+        [:name, :path, :mapper, :reducer]
       end
 
       def as_hash job
@@ -62,29 +62,29 @@ module Wukong
         end
       end
       
-      def as_tsv job
+      def as_row job
         hsh = as_hash(job)
         [
          hsh[:type],
          color_job(hsh[:name]),
          hsh[:path]
-        ].tap do |tsv|
+        ].tap do |row|
           case job.mapper
           when DataflowBuilder
-            tsv << dataflows_formatter.topology(job.mapper)
+            row << dataflows_formatter.topology(job.mapper)
           when ProcessorBuilder
-            tsv << color_proc(job.mapper.label)
+            row << color_proc(job.mapper.label)
           else
-            tsv << '<none>'
+            row << '<none>'
           end
 
           case job.reducer
           when DataflowBuilder
-            tsv << dataflows_formatter.topology(job.reducer)
+            row << dataflows_formatter.topology(job.reducer)
           when ProcessorBuilder
-            tsv << color_proc(job.reducer.label)
+            row << color_proc(job.reducer.label)
           else
-            tsv << '<none>'
+            row << '<none>'
           end
         end.map(&:to_s)
       end

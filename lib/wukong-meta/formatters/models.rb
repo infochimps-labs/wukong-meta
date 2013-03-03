@@ -20,7 +20,7 @@ module Wukong
       end
 
       def column_names
-        [:type, :name, :fields]
+        [:name, :fields]
       end
 
       def model? name
@@ -36,7 +36,7 @@ module Wukong
         }
       end
       
-      def as_tsv model
+      def as_row model
         hsh = as_hash(model)
         [
          hsh[:type],
