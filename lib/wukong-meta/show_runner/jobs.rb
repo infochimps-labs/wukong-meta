@@ -4,8 +4,16 @@ module Wukong
 
       # FIXME -- this should really be somewhere in Wukong-Hadoop
       class Job
-        
-        attr_accessor :path
+
+        attr_accessor :path, :job_processors_and_flows
+
+        def self.registered_processors_and_flows
+          @registered_processors_and_flows ||= Set.new(Wukong.registry.show.keys)
+        end
+
+        def self.register_new_processors_and_flows
+          @registered_processors_and_flows = Set.new(Wukong.registry.show.keys)
+        end
         
         def initialize path
           self.path = path
@@ -20,11 +28,17 @@ module Wukong
         end
         
         def load!
+          existing_processors_and_flows = self.class.registered_processors_and_flows.dup
+          
           # FIXME -- I shouldn't have to reach inside the registry
           # like this.  It should provide a delete method.
           Hanuman::Registry::REGISTRY.delete(:mapper)
           Hanuman::Registry::REGISTRY.delete(:reducer)
+
           Kernel.load(path)
+          
+          self.class.register_new_processors_and_flows
+          self.job_processors_and_flows = self.class.registered_processors_and_flows - existing_processors_and_flows - Set.new([:mapper, :reducer])
         end
         
         def mapper
@@ -33,6 +47,13 @@ module Wukong
 
         def reducer
           Wukong.registry.retrieve(:reducer)
+        end
+
+        def processors
+          job_processors_and_flows
+            .map     { |label| Wukong.registry.retrieve(label) }
+            .reject  { |obj|   obj.is_a?(DataflowBuilder)      }
+            .sort_by { |proc|  proc.label                      }
         end
 
         def type
@@ -75,6 +96,11 @@ module Wukong
           path: job.relative_path,
           type: job.type,
         }.tap do |json|
+
+          unless job.processors.empty?
+            json[:processors] = job.processors.map { |proc| processor_as_json(proc) }
+          end
+          
           case job.mapper
           when DataflowBuilder
             json[:mapper] = dataflow_as_json(job.mapper)
@@ -115,6 +141,15 @@ module Wukong
          "#{heading('JOB:')}  #{color_job(job.label)}",
          "#{heading('PATH:')} #{color_job(job.relative_path)}",
         ].tap do |lines|
+
+          unless job.processors.empty?
+            lines << ''
+            lines << heading("PROCESSORS:", level)
+            job.processors.each do |proc|
+              lines << processor_as_text(proc, level+1).map { |line| '  ' + line }
+            end
+          end
+          
           case job.mapper
           when DataflowBuilder
             lines << ''
@@ -134,6 +169,7 @@ module Wukong
             lines << heading("REDUCER:", level)
             lines.concat(processor_as_text(job.reducer, level+1).map { |line| '  ' + line })
           end
+
         end
       end
 
