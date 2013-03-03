@@ -1,19 +1,14 @@
-require_relative 'show_runner/processors'
-require_relative 'show_runner/dataflows'
-require_relative 'show_runner/jobs'
-require_relative 'show_runner/models'
+require_relative 'formatters/models'
+require_relative 'formatters/processors'
+require_relative 'formatters/dataflows'
+require_relative 'formatters/jobs'
 
 module Wukong
   module Meta
 
     # Runs the wu-show command.
     class ShowRunner < Wukong::Runner
-
-      include ShowProcessors
-      include ShowDataflows
-      include ShowJobs
-      include ShowModels
-
+      
       usage "[PROCESSOR|DATAFLOW|JOB|MODEL|processors|dataflows|jobs|models]"
 
       description <<-EOF.gsub(/^ {8}/,'')
@@ -35,6 +30,15 @@ module Wukong
       
       include Logging
 
+      attr_reader :formatador
+      alias_method :f, :formatador
+      
+      def initialize settings=Configliere::Param.new
+        super(settings)
+        require 'formatador'
+        @formatador = Formatador.new
+      end
+      
       def arg
         args.first
       end
@@ -43,91 +47,60 @@ module Wukong
       # processors and dataflows if none was requested.
       def run
         case
-        when arg == 'processors' then list_processors
-        when arg == 'dataflows'  then list_dataflows
-        when arg == 'jobs'       then list_jobs
-        when arg == 'models'     then list_models
+        when arg == 'legend'     then models_formatter.display_legend
+        when arg == 'models'     then models_formatter.list
+        when arg == 'processors' then processors_formatter.list
+        when arg == 'dataflows'  then dataflows_formatter.list
+        when arg == 'jobs'       then jobs_formatter.list      
+        when models_formatter.model?(arg)
+          models_formatter.show(arg.constantize)
         when processor?(arg)
-          show_processor(Wukong.registry.retrieve(arg.to_sym))
+          processors_formatter.show(arg)
         when dataflow?(arg)
-          show_dataflow(Wukong.registry.retrieve(arg.to_sym))
-        when job?(arg)
-          show_job(jobs[arg.to_sym])
-        when model?(arg)
-          show_model(arg.constantize)
+          dataflows_formatter.show(arg)
+        when jobs_formatter.job?(arg)
+          jobs_formatter.show(arg)
         when arg
-          log.error("No such model, processor, dataflow, or job <#{arg}>")
+          raise Wukong::Error.new("No such model, processor, dataflow, or job <#{arg}>")
         else
-          list_models
-          list_processors
-          list_dataflows
-          list_jobs
-        end
-      end
-
-      def max_label_size
-        @max_label_size ||= (processors + dataflows + jobs.values + models).map do |thing|
-          (thing.respond_to?(:label) ? thing.label : thing.to_s).size
-        end.max
-      end
-
-      def max_path_size
-        @max_path_size ||= (jobs.values).map { |thing| thing.relative_path.to_s.size }.max
-      end
-      
-      protected
-
-      def heading text, level=1
-        case level
-        when 1 then color text, :black
-        when 2 then color text, :black
-        else        color text, :black, false
-        end
-      end
-
-      def color_field text
-        color text, :green
-      end
-      
-      def color_proc text
-        color text, :magenta
-      end
-      
-      def color_flow text
-        color text, :blue
-      end
-      
-      def color_job text
-        color text, :red
-      end
-
-      def color_model text
-        color text, :yellow, false
-      end
-      
-      # http://en.wikipedia.org/wiki/ANSI_escape_code#Colors
-      COLORS = {}.tap do |colors|
-        %w[black red green yellow
-           blue magenta cyan white].each_with_index do |color, index|
-          colors[color.to_sym] = 30 + index
+          list_all
         end
       end
       
-      def color text, name, bold=true
-        return text unless $stdout.tty?
-        %Q{\e[#{COLORS[name]}m#{bold ? "\e[1m" : ""}#{text}\e[0m}
+      def list_all
+        Formatador.display_line "[bold]Models:[/]"     if settings[:to] == 'text'
+        models_formatter.list
+        if settings[:to] == 'text'
+          Formatador.display_line ""
+          Formatador.display_line "[bold]Processors:[/]"
+        end
+        processors_formatter.list
+        if settings[:to] == 'text'
+          Formatador.display_line ""
+          Formatador.display_line "[bold]Dataflows:[/]"
+        end
+        dataflows_formatter.list
+        if settings[:to] == 'text'
+          Formatador.display_line ""
+          Formatador.display_line "[bold]Jobs:[/]"
+        end
+        jobs_formatter.list
       end
 
-      def format_field field
-        {name: field.name}.tap do |formatted_field|
-          formatted_field[:type]    = field.type.respond_to?(:product) ? field.type.product : field.type
-          unless field.default.nil?
-            formatted_field[:default] = field.default.is_a?(Proc) ? "<dynamically calculated>" : field.default
-          end
-          unless field.doc.nil? || field.doc.empty? || field.doc == "#{field.name} field"
-            formatted_field[:doc]     = field.doc     if field.doc
-          end
-        end
+      def models_formatter
+        @models_formatter ||= ModelsFormatter.new(formatador, settings)
+      end
+      
+      def processors_formatter
+        @processors_formatter ||= ProcessorsFormatter.new(formatador, settings)
+      end
+      
+      def dataflows_formatter
+        @dataflows_formatter ||= DataflowsFormatter.new(formatador, settings)
+      end
+      
+      def jobs_formatter
+        @jobs_formatter ||= JobsFormatter.new(formatador, settings, processors_formatter, dataflows_formatter)
       end
       
     end

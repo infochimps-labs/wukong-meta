@@ -1,0 +1,13 @@
+# Require the environment
+require_relative('config/environment')
+
+# Require the Wukong rake helper which gives us the :environment task.
+require 'wukong/rake_helper'
+
+# Load all pre-defined tasks from the deploy pack library.
+require 'wukong-deploy/tasks'
+
+# Load all tasks within this deploy pack.
+Dir[File.join(File.expand_path('../lib/tasks', __FILE__), '*')].each { |path| require path }
+
+task :default => :spec
