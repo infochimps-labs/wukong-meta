@@ -19,21 +19,23 @@ module Wukong
         end
       end
 
-      def model_files
-        @model_files ||= Dir[Wukong::Deploy.app_dir.join('models/**/*.rb')].map { |path| Pathname.new(path) }
-      end
-
       def models
-        @models ||= Hash[model_files.map { |file| model = Model.new(file) ; [model.label, model] }]
+        @models ||= [].tap do |m|
+          ObjectSpace.each_object(::Class) do |klass|
+            next if klass.to_s =~ /^(Gorillib|Hanuman|Wukong|Vayacondios)/
+            next if klass.to_s =~ /^#/
+            m << klass if klass.included_modules.include?(Gorillib::Model)
+          end
+        end.sort_by { |model| model.to_s }
       end
 
       def model? model_name
-        model_name && models.include?(model_name.to_sym)
+        model_name && models.any? { |model| model.to_s == model_name }
       end
       
       def list_models
         settings[:to] = 'list' if settings[:to] == 'text'
-        models.keys.sort.each { |model_label| show_model(models[model_label]) }
+        models.each { |model| show_model(model) }
       end
       
       def show_model model
@@ -47,29 +49,52 @@ module Wukong
 
       def model_as_json model
         {
-          _id:  model.label,
-          name: model.label,
+          _id:  model.to_s,
+          name: model.to_s,
         }
       end
       
       def model_as_tsv model
         [
          'Model',
-         model.label,
+         model.to_s,
+         model_fields(model).map { |field| field[:name] }.join(',')
         ].map(&:to_s)
       end
       
       def model_as_list model
         [
-         'Model   ',
-         color_model(model.label.to_s.ljust(max_label_size)),
+         heading('Model   '),
+         color_model(model.to_s.ljust(max_label_size)),
+         model_fields(model).map { |field| color_field(field[:name]) }.join(',')
         ]
       end
 
       def model_as_text model, level=1
         [
-         "#{heading('MODEL:')} #{color_model(model.label)}",
-        ]
+         "#{heading('MODEL:')} #{color_model(model.to_s)}",
+        ].tap do |lines|
+          if model_fields(model).empty?
+            lines << "#{heading('Fields:', level)} None"
+          else
+            lines << heading("FIELDS:", level)
+            model_fields(model).each_with_index do |field, index|
+              lines << "  #{heading('NAME:', level+1)}        #{color_field(field[:name])}"
+              lines << "  #{heading('TYPE:', level+1)}        #{color_field(field[:type])}"
+              lines << "  #{heading('DEFAULT:', level+1)}     #{field[:default]}" if field[:default]
+              lines << "  #{heading('DESCRIPTION:', level+1)} #{field[:doc]}" if field[:doc]
+              lines << '' unless index == model_fields(model).size
+            end
+          end
+        end
+      end
+
+      def model_fields model
+        [].tap do |formatted_fields|
+          model.fields.each_pair do |label, field|
+            formatted_fields << format_field(field)
+          end
+        end
       end
 
     end

@@ -50,7 +50,7 @@ module Wukong
       
       def dataflow_as_list dataflow
         [
-         'Dataflow',
+         heading('Dataflow'),
          color_flow(dataflow.label.to_s.ljust(max_label_size)),
          dataflow.stages.map(&:first).uniq.map { |label| color_proc(label) }.join(',')
         ]

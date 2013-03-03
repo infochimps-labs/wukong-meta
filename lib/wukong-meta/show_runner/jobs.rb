@@ -103,7 +103,7 @@ module Wukong
       
       def job_as_list job
         [
-         'Job     ',
+         heading('Job     '),
          color_job(job.label.to_s.ljust(max_label_size)),
          job.relative_path.to_s.ljust(max_path_size),
          job.type,

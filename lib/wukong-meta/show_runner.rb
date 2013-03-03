@@ -54,7 +54,9 @@ module Wukong
         when job?(arg)
           show_job(jobs[arg.to_sym])
         when model?(arg)
-          show_model(models[arg.to_sym])
+          show_model(arg.constantize)
+        when arg
+          log.error("No such model, processor, dataflow, or job <#{arg}>")
         else
           list_models
           list_processors
@@ -64,7 +66,9 @@ module Wukong
       end
 
       def max_label_size
-        @max_label_size ||= (processors + dataflows + jobs.values).map { |thing| thing.label.size }.max
+        @max_label_size ||= (processors + dataflows + jobs.values + models).map do |thing|
+          (thing.respond_to?(:label) ? thing.label : thing.to_s).size
+        end.max
       end
 
       def max_path_size
@@ -75,10 +79,14 @@ module Wukong
 
       def heading text, level=1
         case level
-        when 1 then color text, :green
-        when 2 then color text, :black,
+        when 1 then color text, :black
+        when 2 then color text, :black
         else        color text, :black, false
         end
+      end
+
+      def color_field text
+        color text, :green
       end
       
       def color_proc text
@@ -108,6 +116,18 @@ module Wukong
       def color text, name, bold=true
         return text unless $stdout.tty?
         %Q{\e[#{COLORS[name]}m#{bold ? "\e[1m" : ""}#{text}\e[0m}
+      end
+
+      def format_field field
+        {name: field.name}.tap do |formatted_field|
+          formatted_field[:type]    = field.type.respond_to?(:product) ? field.type.product : field.type
+          unless field.default.nil?
+            formatted_field[:default] = field.default.is_a?(Proc) ? "<dynamically calculated>" : field.default
+          end
+          unless field.doc.nil? || field.doc.empty? || field.doc == "#{field.name} field"
+            formatted_field[:doc]     = field.doc     if field.doc
+          end
+        end
       end
       
     end

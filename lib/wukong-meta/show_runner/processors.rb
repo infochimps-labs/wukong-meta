@@ -34,13 +34,15 @@ module Wukong
         [
          'Processor',
          processor.label,
+         processor_fields(processor).map { |field| field[:name] }.join(',')
         ].map(&:to_s)
       end
       
       def processor_as_list processor
         [
-         'Processor',
-         color_proc(processor.label.to_s.ljust(max_label_size))
+         heading('Processor'),
+         color_proc(processor.label.to_s.ljust(max_label_size)),
+         processor_fields(processor).map { |field| color_field(field[:name]) }.join(',')
         ]
       end
       
@@ -56,9 +58,9 @@ module Wukong
           else
             lines << heading("FIELDS:", level)
             processor_fields(processor).each_with_index do |field, index|
-              lines << "  #{heading('NAME:', level+1)}        #{field[:name]}"
-              lines << "  #{heading('TYPE:', level+1)}        #{field[:type]}"
-              lines << "  #{heading('DEFAULT:', level+1)}     #{field[:default] || 'nil'}"
+              lines << "  #{heading('NAME:', level+1)}        #{color_field(field[:name])}"
+              lines << "  #{heading('TYPE:', level+1)}        #{color_field(field[:type])}"
+              lines << "  #{heading('DEFAULT:', level+1)}     #{field[:default]}" if field[:default]
               lines << "  #{heading('DESCRIPTION:', level+1)} #{field[:doc]}" if field[:doc]
               lines << '' unless index == processor_fields(processor).size
             end
@@ -80,7 +82,7 @@ module Wukong
         [].tap do |formatted_fields|
           processor.for_class.fields.each_pair do |label, field|
             next if ignored_processor_fields.include?(label.to_s)
-            formatted_fields << format_processor_field(field)
+            formatted_fields << format_field(field)
           end
         end
       end
@@ -89,13 +91,6 @@ module Wukong
         @ignored_processor_fields ||= Set.new(%w[label log notifier action])
       end
       
-      def format_processor_field field
-        {name: field.name}.tap do |formatted_field|
-          formatted_field[:type]    = field.type.product
-          formatted_field[:default] = field.default unless field.default.nil?
-          formatted_field[:doc]     = field.doc     if field.doc
-        end
-      end
 
     end
   end
