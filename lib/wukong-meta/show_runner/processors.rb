@@ -54,7 +54,7 @@ module Wukong
 
           lines << ''
           if processor_fields(processor).empty?
-            lines << "#{heading('Fields:', level)} None"
+            lines << "#{heading('FIELDS:', level)} None"
           else
             lines << heading("FIELDS:", level)
             processor_fields(processor).each_with_index do |field, index|

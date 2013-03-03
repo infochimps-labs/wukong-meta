@@ -76,7 +76,7 @@ module Wukong
          "#{heading('MODEL:')} #{color_model(model.to_s)}",
         ].tap do |lines|
           if model_fields(model).empty?
-            lines << "#{heading('Fields:', level)} None"
+            lines << "#{heading('FIELDS:', level)} None"
           else
             lines << heading("FIELDS:", level)
             model_fields(model).each_with_index do |field, index|
