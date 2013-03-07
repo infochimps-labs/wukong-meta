@@ -21,12 +21,15 @@ module Wukong
 
       def as_hash dataflow
         {
-          _id:    dataflow.label,
-          type:   "Dataflow",
-          name:   dataflow.label,
-          class:  dataflow.for_class.to_s,
-          stages: dataflow.stages.map { |label, stage| label },
-          edges:  dataflow.links.map  { |link| { from: link.from, into: link.into } },
+          _id:            "#{deploy_pack_name}-#{dataflow.label}",
+          _type:          "deploy_pack_dataflows",
+          deploy_pack_id: deploy_pack_name,
+          updated_at:     Time.now.iso8601,
+          name:           dataflow.label,
+          class:          dataflow.for_class.to_s,
+          description:    dataflow.for_class.description,
+          stages:         dataflow.stages.map { |label, stage| label },
+          links:          dataflow.links.map  { |link| { from: link.from, into: link.into } },
         }
       end
       

@@ -35,10 +35,12 @@ module Wukong
 
       def as_hash job
         {
-          _id:  job.label,
-          type: "Job",
-          name: job.label,
-          path: job.relative_path,
+          _id:            "#{deploy_pack_name}-#{job.label}",
+          _type:          "deploy_pack_jobs",
+          deploy_pack_id: deploy_pack_name,
+          updated_at:     Time.now.iso8601,
+          name:           job.label,
+          path:           job.relative_path,
         }.tap do |json|
 
           unless job.processors.empty?
@@ -158,7 +160,13 @@ module Wukong
           Hanuman::Registry::REGISTRY.delete(:mapper)
           Hanuman::Registry::REGISTRY.delete(:reducer)
 
-          Kernel.load(path)
+          begin
+            Kernel.load(path)
+          rescue RuntimeError, StandardError, LoadError => e
+            self.processors = []
+            self.dataflows  = []
+            return
+          end
           
           self.class.register_new_processors_and_flows
 

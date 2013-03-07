@@ -15,7 +15,16 @@
 # will take precedence over settings within any of these files.
 #
 
-
+#
+# == Deploy Pack
+#
+# These are settings that describe and control the deploy pack itself
+# instead of the behavior of its parts.
+deploy_pack:
+  name:  example
+  title: Example Deploy Pack
+  description: This is an example deploy pack.
+  
 #
 # == Notifier
 #

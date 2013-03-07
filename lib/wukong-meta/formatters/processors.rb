@@ -21,12 +21,14 @@ module Wukong
       
       def as_hash processor
         {
-          _id:         processor.label,
-          type:        "Processor",
-          name:        processor.label,
-          class:       processor.for_class.to_s,
-          description: processor.for_class.description.to_s,
-          fields:      fields(processor),
+          _id:            "#{deploy_pack_name}-#{processor.label}",
+          _type:          "deploy_pack_processors",
+          deploy_pack_id: deploy_pack_name,
+          updated_at:     Time.now.iso8601,
+          name:           processor.label,
+          class:          processor.for_class.to_s,
+          description:    processor.for_class.description.to_s,
+          fields:         fields(processor),
         }
       end
 

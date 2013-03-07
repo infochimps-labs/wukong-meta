@@ -11,6 +11,10 @@ module Wukong
         self.settings = settings
         @formatador = formatador
       end
+
+      def deploy_pack_name
+        (Wukong::Deploy.settings[:deploy_pack][:name] || 'unknown') rescue 'unknown'
+      end
       
       def table
         @table ||= objects.map do |object|

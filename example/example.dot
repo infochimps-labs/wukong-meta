@@ -1,7 +1,0 @@
-digraph "my_flow" {
-	from_tsv_0 [label="from_tsv"];
-	group_0 [label="group"];
-	from_tsv_1 [label="from_tsv"];
-	from_tsv_0 -> group_0;
-	group_0 -> from_tsv_1;
-}

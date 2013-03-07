@@ -2,6 +2,7 @@ require_relative 'formatters/models'
 require_relative 'formatters/processors'
 require_relative 'formatters/dataflows'
 require_relative 'formatters/jobs'
+require_relative 'formatters/deploy_pack'
 
 module Wukong
   module Meta
@@ -9,7 +10,7 @@ module Wukong
     # Runs the wu-show command.
     class ShowRunner < Wukong::Runner
       
-      usage "[legend|processors|dataflows|jobs|models|PROCESSOR|DATAFLOW|JOB|MODEL]"
+      usage "[legend|deploy_pack|processors|dataflows|jobs|models|PROCESSOR|DATAFLOW|JOB|MODEL]"
 
       description <<-EOF.gsub(/^ {8}/,'')
 
@@ -51,11 +52,12 @@ module Wukong
       # processors and dataflows if none was requested.
       def run
         case
-        when arg == 'legend'     then models_formatter.display_legend
-        when arg == 'models'     then models_formatter.list
-        when arg == 'processors' then processors_formatter.list
-        when arg == 'dataflows'  then dataflows_formatter.list
-        when arg == 'jobs'       then jobs_formatter.list      
+        when arg == 'legend'      then models_formatter.display_legend
+        when arg == 'application' then deploy_pack_formatter.show(:deploy_pack)
+        when arg == 'models'      then models_formatter.list
+        when arg == 'processors'  then processors_formatter.list
+        when arg == 'dataflows'   then dataflows_formatter.list
+        when arg == 'jobs'        then jobs_formatter.list      
         when models_formatter.model?(arg)
           models_formatter.show(arg.constantize)
         when processor?(arg)
@@ -89,6 +91,10 @@ module Wukong
           Formatador.display_line "[bold]Jobs:[/]"
         end
         jobs_formatter.list
+      end
+
+      def deploy_pack_formatter
+        @deploy_pack_formatter ||= DeployPackFormatter.new(formatador, settings)
       end
 
       def models_formatter

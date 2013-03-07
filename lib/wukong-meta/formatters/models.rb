@@ -29,10 +29,12 @@ module Wukong
       
       def as_hash model
         {
-          _id:  model.to_s,
-          type: "Model",
-          name: model.to_s,
-          fields: fields(model),
+          _id:            "#{deploy_pack_name}-#{model}",
+          _type:          "deploy_pack_models",
+          deploy_pack_id: deploy_pack_name,
+          updated_at:     Time.now.iso8601,
+          name:           model.to_s,
+          fields:         fields(model),
         }
       end
       
